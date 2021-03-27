@@ -16,6 +16,7 @@ package humioexporter
 
 import (
 	"context"
+	"errors"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configmodels"
@@ -68,7 +69,28 @@ func createTraceExporter(
 	params component.ExporterCreateParams,
 	config configmodels.Exporter,
 ) (component.TracesExporter, error) {
-	return nil, nil
+	if config == nil {
+		return nil, errors.New("missing config")
+	}
+	cfg := config.(*Config)
+
+	// Fail fast if the configurations are invalid
+	if err := cfg.sanitize(); err != nil {
+		return nil, err
+	}
+
+	client := newHumioClient(cfg, params.Logger)
+	exporter := newTracesExporter(cfg, params.Logger, client)
+
+	return exporterhelper.NewTraceExporter(
+		cfg,
+		params.Logger,
+		exporter.pushTraceData,
+		exporterhelper.WithQueue(cfg.QueueSettings),
+		exporterhelper.WithRetry(cfg.RetrySettings),
+		exporterhelper.WithStart(exporter.start),
+		exporterhelper.WithShutdown(exporter.shutdown),
+	)
 }
 
 // Creates a new metrics exporter for Humio
@@ -77,7 +99,7 @@ func createMetricsExporter(
 	params component.ExporterCreateParams,
 	config configmodels.Exporter,
 ) (component.MetricsExporter, error) {
-	return nil, nil
+	return nil, errors.New("metrics exporter not implemented yet")
 }
 
 // Creates a new logs exporter for Humio
@@ -86,5 +108,5 @@ func createLogsExporter(
 	params component.ExporterCreateParams,
 	config configmodels.Exporter,
 ) (component.LogsExporter, error) {
-	return nil, nil
+	return nil, errors.New("logs exporter not implemented yet")
 }
