@@ -48,13 +48,13 @@ func TestCreateTracesExporter(t *testing.T) {
 			desc: "Valid trace configuration",
 			config: &Config{
 				IngestToken: "00000000-0000-0000-0000-0000000000000",
-				Endpoint:    "localhost:8080",
+				Endpoint:    "http://localhost:8080",
 			},
 			wantErr: false,
 		},
 		{
 			desc:    "Invalid trace configuration",
-			config:  &Config{Endpoint: "localhost:8080"},
+			config:  &Config{Endpoint: "http://localhost:8080"},
 			wantErr: true,
 		},
 		{
