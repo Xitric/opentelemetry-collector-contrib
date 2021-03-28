@@ -167,13 +167,13 @@ func TestSanitizeCustomHeaders(t *testing.T) {
 
 func TestSanitizeErrors(t *testing.T) {
 	// Arrange
-	tests := []struct {
-		name    string
+	testCases := []struct {
+		desc    string
 		config  *Config
 		wantErr bool
 	}{
 		{
-			name: "Missing ingest token",
+			desc: "Missing ingest token",
 			config: &Config{
 				IngestToken:      "",
 				Endpoint:         "e",
@@ -185,7 +185,7 @@ func TestSanitizeErrors(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Missing endpoint",
+			desc: "Missing endpoint",
 			config: &Config{
 				IngestToken:      "t",
 				Endpoint:         "",
@@ -197,7 +197,7 @@ func TestSanitizeErrors(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Override tags",
+			desc: "Override tags",
 			config: &Config{
 				IngestToken:      "t",
 				Endpoint:         "e",
@@ -210,7 +210,7 @@ func TestSanitizeErrors(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Missing custom tags",
+			desc: "Missing custom tags",
 			config: &Config{
 				IngestToken:      "t",
 				Endpoint:         "e",
@@ -222,7 +222,7 @@ func TestSanitizeErrors(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Unix with time zone",
+			desc: "Unix with time zone",
 			config: &Config{
 				IngestToken:      "t",
 				Endpoint:         "e",
@@ -235,7 +235,7 @@ func TestSanitizeErrors(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Missing time zone",
+			desc: "Missing time zone",
 			config: &Config{
 				IngestToken:      "t",
 				Endpoint:         "e",
@@ -247,7 +247,7 @@ func TestSanitizeErrors(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Error creating URLs",
+			desc: "Error creating URLs",
 			config: &Config{
 				IngestToken:      "t",
 				Endpoint:         "\n\t",
@@ -261,10 +261,10 @@ func TestSanitizeErrors(t *testing.T) {
 	}
 
 	// Act / Assert
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if err := test.config.sanitize(); (err != nil) != test.wantErr {
-				t.Errorf("Config.sanitize() error = %v, wantErr %v", err, test.wantErr)
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			if err := tC.config.sanitize(); (err != nil) != tC.wantErr {
+				t.Errorf("Config.sanitize() error = %v, wantErr %v", err, tC.wantErr)
 			}
 		})
 	}
