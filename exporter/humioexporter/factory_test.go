@@ -47,12 +47,8 @@ func TestCreateTracesExporter(t *testing.T) {
 		{
 			desc: "Valid trace configuration",
 			config: &Config{
-				IngestToken:      "00000000-0000-0000-0000-0000000000000",
-				Endpoint:         "localhost:8080",
-				EnableServiceTag: true,
-				Traces: TracesConfig{
-					IsoTimestamps: true,
-				},
+				IngestToken: "00000000-0000-0000-0000-0000000000000",
+				Endpoint:    "localhost:8080",
 			},
 			wantErr: false,
 		},
