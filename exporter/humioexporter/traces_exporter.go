@@ -123,8 +123,8 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStru
 				otelSpan := otelSpans.At(k)
 
 				evts = append(evts, &HumioStructuredEvent{
-					TimeStamp: otelSpan.StartTime().AsTime(), // TODO: Choose between ISO and Unix
-					// TimeZone:  e.config.Traces.TimeZone,   // TODO: Possible nil pointer, also only inject if using Unix time
+					Timestamp: otelSpan.StartTime().AsTime(),
+					AsUnix:    e.config.Traces.UnixTimestamps,
 					// RawString: "TODO",
 					Attributes: &HumioSpan{
 						TraceId:           otelSpan.TraceID().HexString(),
