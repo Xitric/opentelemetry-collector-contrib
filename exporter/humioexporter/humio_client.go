@@ -115,11 +115,11 @@ func newHumioClient(config *Config, logger *zap.Logger) *humioClient {
 }
 
 func (h *humioClient) sendUnstructuredEvents(ctx context.Context, evts []*HumioUnstructuredEvents) error {
-	return h.sendEvents(ctx, evts, h.config.UnstructuredEndpoint)
+	return h.sendEvents(ctx, evts, h.config.unstructuredEndpoint)
 }
 
 func (h *humioClient) sendStructuredEvents(ctx context.Context, evts []*HumioStructuredEvents) error {
-	return h.sendEvents(ctx, evts, h.config.StructuredEndpoint)
+	return h.sendEvents(ctx, evts, h.config.structuredEndpoint)
 }
 
 func (h *humioClient) sendEvents(ctx context.Context, evts interface{}, u *url.URL) error {

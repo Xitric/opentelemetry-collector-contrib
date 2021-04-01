@@ -39,11 +39,11 @@ type HumioSpan struct {
 	Kind              string            `json:"kind"`
 	Start             int64             `json:"start"`
 	End               int64             `json:"end"`
-	StatusCode        string            `json:"status"`
-	StatusDescription string            `json:"status_descr"`
+	StatusCode        string            `json:"status,omitempty"`
+	StatusDescription string            `json:"status_descr,omitempty"`
 	ServiceName       string            `json:"service"`
-	Links             HumioLink         `json:"links"`
-	Attributes        map[string]string `json:"extras"`
+	Links             []*HumioLink      `json:"links,omitempty"`
+	Attributes        map[string]string `json:"extras,omitempty"`
 }
 
 type humioTracesExporter struct {
@@ -71,6 +71,10 @@ func (e *humioTracesExporter) pushTraceData(ctx context.Context, td pdata.Traces
 	}
 
 	err = e.client.sendStructuredEvents(ctx, evts)
+	if err == nil {
+		return nil
+	}
+
 	if consumererror.IsPermanent(err) {
 		return err
 	}
