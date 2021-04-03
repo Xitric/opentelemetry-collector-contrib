@@ -18,7 +18,6 @@ import (
 	"context"
 	"sync"
 
-	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/consumer/pdata"
 	"go.opentelemetry.io/collector/translator/conventions"
@@ -82,11 +81,6 @@ func (e *humioTracesExporter) pushTraceData(ctx context.Context, td pdata.Traces
 	}
 
 	return consumererror.NewTraces(err, td)
-}
-
-func (e *humioTracesExporter) start(context.Context, component.Host) error {
-	// TODO: Make test request to ensure Humio connectivity? (Fail fast)
-	return nil
 }
 
 func (e *humioTracesExporter) shutdown(context.Context) error {

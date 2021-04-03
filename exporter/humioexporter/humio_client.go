@@ -100,7 +100,6 @@ func (e *HumioStructuredEvent) MarshalJSON() ([]byte, error) {
 type client interface {
 	sendUnstructuredEvents(context.Context, []*HumioUnstructuredEvents) error
 	sendStructuredEvents(context.Context, []*HumioStructuredEvents) error
-	checkServerStatus(context.Context) error
 }
 
 // A concrete HTTP client for sending unstructured and structured events to Humio
@@ -189,37 +188,4 @@ func encodeBody(body interface{}) (io.Reader, error) {
 	}
 
 	return bytes.NewReader(b), nil
-}
-
-type humioHealthResponse struct {
-	Status  string `json:"status,omitempty"`
-	Version string `json:"version,omitempty"`
-}
-
-// Query the Humio health check API to determine if the server is ready
-func (h *humioClient) checkServerStatus(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(
-		ctx,
-		"GET",
-		h.config.healthCheckEndpoint.String(),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-
-	res, err := h.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	health := &humioHealthResponse{}
-	json.NewDecoder(res.Body).Decode(health)
-
-	if health.Status != "OK" {
-		return errors.New("Humio server health status: " + health.Status)
-	}
-
-	return nil
 }

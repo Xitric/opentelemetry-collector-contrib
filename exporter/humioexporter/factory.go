@@ -88,7 +88,6 @@ func createTracesExporter(
 		exporter.pushTraceData,
 		exporterhelper.WithQueue(cfg.QueueSettings),
 		exporterhelper.WithRetry(cfg.RetrySettings),
-		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
 	)
 }
