@@ -29,7 +29,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func makeClient(t *testing.T, host string) *humioClient {
+func makeClient(t *testing.T, host string) client {
 	cfg := &Config{
 		IngestToken: "token",
 		Endpoint:    host,
@@ -143,11 +143,10 @@ func executeRequest(fn func(s *httptest.Server) error) (result requestData) {
 
 func TestNewHumioClient(t *testing.T) {
 	// Arrange / Act
-	humio := makeClient(t, "http://localhost:8080")
+	c := makeClient(t, "http://localhost:8080")
 
 	// Assert
-	assert.NotNil(t, humio)
-	assert.NotNil(t, humio.client)
+	assert.NotNil(t, c)
 }
 
 func TestSendUnstructuredEvents(t *testing.T) {
@@ -310,7 +309,7 @@ func TestSendEventsStatusCodes(t *testing.T) {
 
 			// Assert
 			if consumererror.IsPermanent(err) != tC.wantPerm {
-				t.Errorf("SendEvents() permanent = %v, wantPerm %v",
+				t.Errorf("sendEvents() permanent = %v, wantPerm %v",
 					consumererror.IsPermanent(err), tC.wantPerm)
 			}
 		})

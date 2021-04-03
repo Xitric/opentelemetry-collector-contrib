@@ -29,7 +29,7 @@ import (
 type HumioLink struct {
 	TraceId    string `json:"trace_id"`
 	SpanId     string `json:"span_id"`
-	TraceState string `json:"state"`
+	TraceState string `json:"state,omitempty"`
 }
 
 // A representation of a span as it is stored inside Humio
@@ -45,17 +45,17 @@ type HumioSpan struct {
 	StatusDescription string                 `json:"status_descr,omitempty"`
 	ServiceName       string                 `json:"service"`
 	Links             []*HumioLink           `json:"links,omitempty"`
-	Attributes        map[string]interface{} `json:"extras,omitempty"`
+	Extras            map[string]interface{} `json:"extras,omitempty"`
 }
 
 type humioTracesExporter struct {
 	config *Config
 	logger *zap.Logger
-	client *humioClient
+	client client
 	wg     sync.WaitGroup
 }
 
-func newTracesExporter(config *Config, logger *zap.Logger, client *humioClient) *humioTracesExporter {
+func newTracesExporter(config *Config, logger *zap.Logger, client client) *humioTracesExporter {
 	return &humioTracesExporter{
 		config: config,
 		logger: logger,
@@ -109,6 +109,9 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStru
 		serviceName := ""
 		if sName, ok := r.Attributes().Get(conventions.AttributeServiceName); ok {
 			serviceName = sName.StringVal()
+		} else {
+			// TODO: Handle dropped spans somewhere
+			continue
 		}
 
 		evts := make([]*HumioStructuredEvent, 0, resSpan.InstrumentationLibrarySpans().Len())
@@ -141,8 +144,12 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStru
 
 func (e *humioTracesExporter) spanToHumioEvent(span pdata.Span, inst pdata.InstrumentationLibrary, res pdata.Resource) *HumioStructuredEvent {
 	attr := toHumioAttributes(span.Attributes(), res.Attributes())
-	attr["instrumentationLibrary.name"] = inst.Name()
-	attr["instrumentationLibrary.version"] = inst.Version()
+	if instName := inst.Name(); instName != "" {
+		attr[conventions.InstrumentationLibraryName] = instName
+	}
+	if instVer := inst.Version(); instVer != "" {
+		attr[conventions.InstrumentationLibraryVersion] = instVer
+	}
 
 	serviceName := ""
 	if sName, ok := res.Attributes().Get(conventions.AttributeServiceName); ok {
@@ -167,7 +174,7 @@ func (e *humioTracesExporter) spanToHumioEvent(span pdata.Span, inst pdata.Instr
 			StatusDescription: span.Status().Message(),
 			ServiceName:       serviceName,
 			Links:             toHumioLinks(span.Links()),
-			Attributes:        attr,
+			Extras:            attr,
 		},
 	}
 }
