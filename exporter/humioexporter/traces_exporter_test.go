@@ -136,10 +136,9 @@ func TestTracesToHumioEvents_OnePerResource(t *testing.T) {
 	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{})
 
 	// Act
-	actual, err := exp.tracesToHumioEvents(traces)
+	actual := exp.tracesToHumioEvents(traces)
 
 	// Assert
-	require.NoError(t, err)
 	assert.Equal(t, 2, len(actual))
 }
 
@@ -167,10 +166,9 @@ func TestTracesToHumioEvents_CombinesInstrumentation(t *testing.T) {
 	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{})
 
 	// Act
-	actual, err := exp.tracesToHumioEvents(traces)
+	actual := exp.tracesToHumioEvents(traces)
 
 	// Assert
-	require.NoError(t, err)
 	assert.Equal(t, 1, len(actual))
 	assert.Equal(t, map[string]string{
 		"service": "service1",

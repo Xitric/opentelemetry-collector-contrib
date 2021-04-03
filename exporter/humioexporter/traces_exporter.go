@@ -66,12 +66,10 @@ func (e *humioTracesExporter) pushTraceData(ctx context.Context, td pdata.Traces
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	evts, err := e.tracesToHumioEvents(td)
-	if err != nil {
-		return consumererror.Permanent(err)
-	}
+	// TODO: Expose metric for dropped traces due to conversion errors?
+	evts := e.tracesToHumioEvents(td)
 
-	err = e.client.sendStructuredEvents(ctx, evts)
+	err := e.client.sendStructuredEvents(ctx, evts)
 	if err == nil {
 		return nil
 	}
@@ -91,7 +89,7 @@ func (e *humioTracesExporter) shutdown(context.Context) error {
 // See
 // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/jaeger.md
 // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/overview.md#semantic-conventions
-func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStructuredEvents, error) {
+func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) []*HumioStructuredEvents {
 	results := make([]*HumioStructuredEvents, 0, td.ResourceSpans().Len())
 
 	// Each resource describes unique origin that generates spans
@@ -133,7 +131,7 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStru
 		})
 	}
 
-	return results, nil
+	return results
 }
 
 func (e *humioTracesExporter) spanToHumioEvent(span pdata.Span, inst pdata.InstrumentationLibrary, res pdata.Resource) *HumioStructuredEvent {
