@@ -399,43 +399,11 @@ func TestToHumioAttributesShaded(t *testing.T) {
 
 func TestShutdown(t *testing.T) {
 	// Arrange
-	endChan := make(chan error)
-	clientChan := make(chan bool)
-
-	// Make a client mock that blocks until we release it
-	client := &clientMock{
-		response: func() error {
-			<-clientChan
-			return nil
-		},
-	}
-	exp := newTracesExporter(&Config{}, zap.NewNop(), client)
+	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{})
 
 	// Act
-	// Begin pushing metrics in the background
-	go func() {
-		exp.pushTraceData(context.Background(), pdata.NewTraces())
-
-		// Then call shutdown - should block by now
-		go func() {
-			endChan <- exp.shutdown(context.Background())
-		}()
-	}()
+	err := exp.shutdown(context.Background())
 
 	// Assert
-	// Ensure that we cannot shut down yet
-	select {
-	case <-endChan:
-		assert.Fail(t, "Shutdown returned prematurely")
-	case <-time.After(10 * time.Millisecond):
-	}
-
-	// Ensure that shutdown returns when the traces are pushed
-	clientChan <- true
-	select {
-	case err := <-endChan:
-		require.NoError(t, err)
-	case <-time.After(10 * time.Millisecond):
-		assert.Fail(t, "Shutdown returned prematurely")
-	}
+	require.NoError(t, err)
 }
