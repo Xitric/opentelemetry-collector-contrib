@@ -126,6 +126,10 @@ func TestSanitizeValid(t *testing.T) {
 	assert.Equal(t, "localhost:8080", config.structuredEndpoint.Host)
 	assert.Equal(t, structuredPath, config.structuredEndpoint.Path)
 
+	assert.NotNil(t, config.healthCheckEndpoint)
+	assert.Equal(t, "localhost:8080", config.healthCheckEndpoint.Host)
+	assert.Equal(t, healthPath, config.healthCheckEndpoint.Path)
+
 	assert.Equal(t, map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": "Bearer token",

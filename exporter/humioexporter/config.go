@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	basePath         = "api/v1/ingest/"
-	unstructuredPath = basePath + "humio-unstructured"
-	structuredPath   = basePath + "humio-structured"
+	basePath         = "api/v1/"
+	unstructuredPath = basePath + "ingest/humio-unstructured"
+	structuredPath   = basePath + "ingest/humio-structured"
+	healthPath       = basePath + "status"
 )
 
 // Humio configuration settings specific to logs
@@ -67,6 +68,9 @@ type Config struct {
 
 	// Endpoint for the structured ingest API, created internally
 	structuredEndpoint *url.URL
+
+	// Endpoint to check Humio server status
+	healthCheckEndpoint *url.URL
 
 	// User-provided headers to attach in all requests to Humio
 	Headers map[string]string `mapstructure:"headers,omitempty"`
@@ -118,6 +122,15 @@ func (c *Config) sanitize() error {
 			return errors.New("unable to create URL for structured ingest API")
 		}
 		c.structuredEndpoint = endp
+	}
+
+	// Ensure that it is possible to construct a URL to access the health check API
+	if c.healthCheckEndpoint == nil {
+		endp, err := c.getEndpoint(healthPath)
+		if err != nil {
+			return errors.New("unable to create URL for health check API")
+		}
+		c.healthCheckEndpoint = endp
 	}
 
 	if c.Headers == nil {

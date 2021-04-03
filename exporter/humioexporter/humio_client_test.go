@@ -16,6 +16,7 @@ package humioexporter
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -314,4 +315,63 @@ func TestSendEventsStatusCodes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCheckServerStatus(t *testing.T) {
+	// Arrange
+	testCases := []struct {
+		desc     string
+		response *humioHealthResponse
+		wantErr  bool
+	}{
+		{
+			desc: "Server healthy",
+			response: &humioHealthResponse{
+				Status:  "OK",
+				Version: "1.22.1",
+			},
+			wantErr: false,
+		},
+		{
+			desc: "Server unhealthy",
+			response: &humioHealthResponse{
+				Status:  "ERROR",
+				Version: "1.22.1",
+			},
+			wantErr: true,
+		},
+	}
+
+	// Act
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			s := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+				res, err := json.Marshal(tC.response)
+				require.NoError(t, err)
+				rw.Write(res)
+			}))
+			defer s.Close()
+
+			humio := makeClient(t, s.URL)
+			err := humio.checkServerStatus(context.Background())
+
+			if (err != nil) != tC.wantErr {
+				t.Errorf("checkServerStatus() error = %v, wantErr %v", err, tC.wantErr)
+			}
+		})
+	}
+}
+
+func TestCheckServerStatus_NoServer(t *testing.T) {
+	// Arrange
+	s := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.WriteHeader(404)
+	}))
+	defer s.Close()
+
+	humio := makeClient(t, s.URL)
+	err := humio.checkServerStatus(context.Background())
+
+	// Assert
+	require.Error(t, err)
 }

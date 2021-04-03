@@ -56,6 +56,10 @@ func (m *clientMock) sendStructuredEvents(ctx context.Context, evts []*HumioStru
 	return m.response()
 }
 
+func (m *clientMock) checkServerStatus(context.Context) error {
+	return m.response()
+}
+
 func TestPushTraceData(t *testing.T) {
 	// Arrange
 	testCases := []struct {
