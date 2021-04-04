@@ -153,7 +153,6 @@ func (e *humioTracesExporter) spanToHumioEvent(span pdata.Span, inst pdata.Instr
 	return &HumioStructuredEvent{
 		Timestamp: span.StartTime().AsTime(),
 		AsUnix:    e.config.Traces.UnixTimestamps,
-		// RawString: "TODO",
 		Attributes: &HumioSpan{
 			TraceId:           span.TraceID().HexString(),
 			SpanId:            span.SpanID().HexString(),
