@@ -25,6 +25,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.uber.org/zap"
 )
@@ -32,12 +33,16 @@ import (
 func makeClient(t *testing.T, host string) client {
 	cfg := &Config{
 		IngestToken: "token",
-		Endpoint:    host,
+		HTTPClientSettings: confighttp.HTTPClientSettings{
+			Endpoint: host,
+		},
 	}
 	err := cfg.sanitize()
 	require.NoError(t, err)
 
-	return newHumioClient(cfg, zap.NewNop())
+	client, err := newHumioClient(cfg, zap.NewNop())
+	require.NoError(t, err)
+	return client
 }
 
 func makeUnstructuredEvents() []*HumioUnstructuredEvents {

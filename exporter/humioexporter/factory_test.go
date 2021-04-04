@@ -22,7 +22,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configmodels"
+	"go.opentelemetry.io/collector/config/configtls"
 	"go.uber.org/zap"
 )
 
@@ -48,13 +50,35 @@ func TestCreateTracesExporter(t *testing.T) {
 			desc: "Valid trace configuration",
 			config: &Config{
 				IngestToken: "00000000-0000-0000-0000-0000000000000",
-				Endpoint:    "http://localhost:8080",
+				HTTPClientSettings: confighttp.HTTPClientSettings{
+					Endpoint: "http://localhost:8080",
+				},
 			},
 			wantErr: false,
 		},
 		{
-			desc:    "Invalid trace configuration",
-			config:  &Config{Endpoint: "http://localhost:8080"},
+			desc: "Invalid trace configuration",
+			config: &Config{
+				HTTPClientSettings: confighttp.HTTPClientSettings{
+					Endpoint: "http://localhost:8080",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			desc: "Invalid client configuration",
+			config: &Config{
+				IngestToken: "00000000-0000-0000-0000-0000000000000",
+				HTTPClientSettings: confighttp.HTTPClientSettings{
+					Endpoint: "http://localhost:8080",
+					TLSSetting: configtls.TLSClientSetting{
+						TLSSetting: configtls.TLSSetting{
+							CertFile: "",
+							KeyFile:  "key.key",
+						},
+					},
+				},
+			},
 			wantErr: true,
 		},
 		{

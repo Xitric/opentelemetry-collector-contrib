@@ -110,15 +110,17 @@ type humioClient struct {
 }
 
 // Constructs a new HTTP client for sending payloads to Humio
-func newHumioClient(config *Config, logger *zap.Logger) client {
-	// TODO: A more advanced HTTP client when we support HTTP config options
-	client := http.DefaultClient
+func newHumioClient(config *Config, logger *zap.Logger) (client, error) {
+	client, err := config.HTTPClientSettings.ToClient()
+	if err != nil {
+		return nil, err
+	}
 
 	return &humioClient{
 		config: config,
 		client: client,
 		logger: logger,
-	}
+	}, nil
 }
 
 // Send a payload of unstructured events to the corresponding Humio API
