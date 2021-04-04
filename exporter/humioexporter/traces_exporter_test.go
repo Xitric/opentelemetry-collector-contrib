@@ -119,7 +119,49 @@ func TestPushTraceData(t *testing.T) {
 	}
 }
 
-func TestTracesToHumioEvents_OnePerResource(t *testing.T) {
+func TestPushTraceData_PermanentOnCompleteFailure(t *testing.T) {
+	// Arrange
+	traces := pdata.NewTraces()
+	traces.ResourceSpans().Append(pdata.NewResourceSpans())
+	traces.ResourceSpans().Append(pdata.NewResourceSpans())
+
+	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{})
+
+	// Act
+	err := exp.pushTraceData(context.Background(), traces)
+
+	// Assert
+	require.Error(t, err)
+	assert.True(t, consumererror.IsPermanent(err))
+}
+
+func TestPushTraceData_TransientOnPartialFailure(t *testing.T) {
+	// Arrange
+	traces := pdata.NewTraces()
+	res1 := pdata.NewResourceSpans()
+	res1.Resource().Attributes().InsertString(conventions.AttributeServiceName, "service1")
+	traces.ResourceSpans().Append(res1)
+	traces.ResourceSpans().Append(pdata.NewResourceSpans())
+
+	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{
+		func() error { return nil },
+	})
+
+	// Act
+	err := exp.pushTraceData(context.Background(), traces)
+
+	// Assert
+	require.Error(t, err)
+	assert.False(t, consumererror.IsPermanent(err))
+
+	tErr := consumererror.Traces{}
+	if ok := consumererror.AsTraces(err, &tErr); !ok {
+		assert.Fail(t, "PushTraceData did not return a Traces error")
+	}
+	assert.Equal(t, 1, tErr.GetTraces().ResourceSpans().Len())
+}
+
+func TestTracesToHumioEvents_OnePerValidResource(t *testing.T) {
 	// Arrange
 	traces := pdata.NewTraces()
 
@@ -136,10 +178,17 @@ func TestTracesToHumioEvents_OnePerResource(t *testing.T) {
 	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{})
 
 	// Act
-	actual := exp.tracesToHumioEvents(traces)
+	actual, conversionErr := exp.tracesToHumioEvents(traces)
 
 	// Assert
 	assert.Equal(t, 2, len(actual))
+	assert.False(t, consumererror.IsPermanent(conversionErr))
+
+	tErr := consumererror.Traces{}
+	if ok := consumererror.AsTraces(conversionErr, &tErr); !ok {
+		assert.Fail(t, "TracesToHumioEvents did not return a Traces error")
+	}
+	assert.Equal(t, 1, tErr.GetTraces().ResourceSpans().Len())
 }
 
 func TestTracesToHumioEvents_CombinesInstrumentation(t *testing.T) {
@@ -166,9 +215,10 @@ func TestTracesToHumioEvents_CombinesInstrumentation(t *testing.T) {
 	exp := newTracesExporter(&Config{}, zap.NewNop(), &clientMock{})
 
 	// Act
-	actual := exp.tracesToHumioEvents(traces)
+	actual, conversionErr := exp.tracesToHumioEvents(traces)
 
 	// Assert
+	require.NoError(t, conversionErr)
 	assert.Equal(t, 1, len(actual))
 	assert.Equal(t, map[string]string{
 		"service": "service1",

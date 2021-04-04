@@ -16,6 +16,7 @@ package humioexporter
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"go.opentelemetry.io/collector/consumer/consumererror"
@@ -66,19 +67,29 @@ func (e *humioTracesExporter) pushTraceData(ctx context.Context, td pdata.Traces
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	// TODO: Expose metric for dropped traces due to conversion errors?
-	evts := e.tracesToHumioEvents(td)
-
-	err := e.client.sendStructuredEvents(ctx, evts)
-	if err == nil {
-		return nil
+	evts, conversionErr := e.tracesToHumioEvents(td)
+	if conversionErr != nil && len(evts) == 0 {
+		// All traces failed conversion - no need to retry any more since this is not a
+		// transient failure. By raising a permanent error, the queued retry middleware
+		// will expose a metric for failed spans immediately
+		return consumererror.Permanent(conversionErr)
 	}
 
-	if consumererror.IsPermanent(err) {
+	err := e.client.sendStructuredEvents(ctx, evts)
+	if err != nil {
+		// Just forward the error from the client if the request failed
 		return err
 	}
 
-	return consumererror.NewTraces(err, td)
+	// Succeccfully sent some traces, report any subset that failed conversion (if any).
+	// While we know that retrying will be unsuccessful, raising a permanent error at
+	// this time will cause the queued retry middleware to assume that all the spans
+	// failed conversion (which is not the case), resulting an incorrect metric being
+	// reported. By instead raising a transient error, the middleware will construct a
+	// new request of only the problematic spans, which will fail entirely. When this
+	// case is handled above, a permanent error is reported to the middleware, and the
+	// correct metric of failed spans is generated.
+	return conversionErr
 }
 
 func (e *humioTracesExporter) shutdown(context.Context) error {
@@ -89,10 +100,10 @@ func (e *humioTracesExporter) shutdown(context.Context) error {
 // See
 // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/jaeger.md
 // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/overview.md#semantic-conventions
-func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) []*HumioStructuredEvents {
+func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStructuredEvents, error) {
 	results := make([]*HumioStructuredEvents, 0, td.ResourceSpans().Len())
+	var droppedTraces []pdata.ResourceSpans
 
-	// Each resource describes unique origin that generates spans
 	resSpans := td.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
 		resSpan := resSpans.At(i)
@@ -102,19 +113,18 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) []*HumioStruc
 		if sName, ok := r.Attributes().Get(conventions.AttributeServiceName); ok {
 			serviceName = sName.StringVal()
 		} else {
-			// TODO: Handle dropped spans somewhere
+			// This is how we handle failed spans, which we may extend over time
+			droppedTraces = append(droppedTraces, resSpan)
 			continue
 		}
 
 		evts := make([]*HumioStructuredEvent, 0, resSpan.InstrumentationLibrarySpans().Len())
 
-		// For each resource, spans are grouped by the instrumentation library (plugin) that generated them
 		instSpans := resSpan.InstrumentationLibrarySpans()
 		for j := 0; j < instSpans.Len(); j++ {
 			instSpan := instSpans.At(j)
 			lib := instSpan.InstrumentationLibrary()
 
-			// Lastly, we get access to the actual spans
 			otelSpans := instSpan.Spans()
 			for k := 0; k < otelSpans.Len(); k++ {
 				otelSpan := otelSpans.At(k)
@@ -131,7 +141,19 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) []*HumioStruc
 		})
 	}
 
-	return results
+	if len(droppedTraces) > 0 {
+		dropped := pdata.NewTraces()
+		for _, t := range droppedTraces {
+			dropped.ResourceSpans().Append(t)
+		}
+
+		return results, consumererror.NewTraces(
+			errors.New("Unable to serialize spans"),
+			dropped,
+		)
+	}
+
+	return results, nil
 }
 
 func (e *humioTracesExporter) spanToHumioEvent(span pdata.Span, inst pdata.InstrumentationLibrary, res pdata.Resource) *HumioStructuredEvent {
