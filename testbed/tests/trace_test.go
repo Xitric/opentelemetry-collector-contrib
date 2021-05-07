@@ -60,6 +60,15 @@ func TestTrace10kSPS(t *testing.T) {
 				ExpectedMaxRAM: 98,
 			},
 		},
+		{
+			"HUMIO",
+			datasenders.NewHumioDataSender(testbed.GetAvailablePort(t)),
+			datareceivers.NewHumioDataReceiver(testbed.GetAvailablePort(t)),
+			testbed.ResourceSpec{
+				ExpectedMaxCPU: 32,
+				ExpectedMaxRAM: 98,
+			},
+		},
 	}
 
 	processors := map[string]string{

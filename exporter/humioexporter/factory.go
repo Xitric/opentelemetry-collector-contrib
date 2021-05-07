@@ -17,6 +17,7 @@ package humioexporter
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
@@ -70,6 +71,8 @@ func createTracesExporter(
 		return nil, errors.New("missing config")
 	}
 	cfg := config.(*Config)
+
+	params.Logger.Warn(fmt.Sprintf("Start sending to %s", cfg.Endpoint))
 
 	if err := cfg.sanitize(); err != nil {
 		return nil, err
