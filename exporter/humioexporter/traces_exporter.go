@@ -57,7 +57,6 @@ type humioTracesExporter struct {
 }
 
 func newTracesExporter(cfg *Config, logger *zap.Logger, client exporterClient) *humioTracesExporter {
-	logger.Warn("Trace exporter go brrrrr")
 	return &humioTracesExporter{
 		cfg:    cfg,
 		logger: logger,
@@ -72,8 +71,6 @@ func (e *humioTracesExporter) ConsumeTraces(ctx context.Context, td pdata.Traces
 func (e *humioTracesExporter) pushTraceData(ctx context.Context, td pdata.Traces) error {
 	e.wg.Add(1)
 	defer e.wg.Done()
-
-	e.logger.Warn("Sending traces from exporter")
 
 	evts, conversionErr := e.tracesToHumioEvents(td)
 	if conversionErr != nil && len(evts) == 0 {

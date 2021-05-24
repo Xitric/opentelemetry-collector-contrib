@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -37,7 +36,6 @@ type humioTracesReceiver struct {
 	logger         *zap.Logger
 	tracesConsumer consumer.Traces
 	server         *http.Server
-	// client         humioexporter.ExporterClient
 }
 
 func NewTracesReceiver(
@@ -49,29 +47,10 @@ func NewTracesReceiver(
 		return nil, errors.New("missing required consumer for traces")
 	}
 
-	// factory := humioexporter.NewFactory()
-	// c := factory.CreateDefaultConfig().(*humioexporter.Config)
-	// c.HTTPClientSettings = confighttp.HTTPClientSettings{
-	// 	Endpoint: "https://cloud.humio.com/",
-	// 	TLSSetting: configtls.TLSClientSetting{
-	// 		InsecureSkipVerify: true,
-	// 	},
-	// }
-	// c.Logs = humioexporter.LogsConfig{
-	// 	IngestToken: "052c2230-f26a-40bf-8b6e-d8375b936af3",
-	// }
-	// c.Sanitize()
-
-	// client, err := humioexporter.NewHumioClient(c, zap.L())
-	// if err != nil {
-	// 	panic("Shit")
-	// }
-
 	return &humioTracesReceiver{
 		cfg:            cfg,
 		logger:         logger,
 		tracesConsumer: nextConsumer,
-		// client:         client,
 	}, nil
 }
 
@@ -79,15 +58,12 @@ func (r *humioTracesReceiver) Start(ctx context.Context, host component.Host) er
 	r.Lock()
 	defer r.Unlock()
 
-	r.logger.Warn(fmt.Sprintf("Start listening on %s", r.cfg.Endpoint))
-
 	listener, err := r.cfg.HTTPServerSettings.ToListener()
 	if err != nil {
 		return err
 	}
 
 	mx := mux.NewRouter()
-	// mx.HandleFunc("/api/v1/ingest/humio-structured", r.handleRequest)
 	mx.NewRoute().HandlerFunc(r.handleRequest)
 
 	r.server = r.cfg.HTTPServerSettings.ToServer(mx)
@@ -109,20 +85,6 @@ func (r *humioTracesReceiver) Shutdown(ctx context.Context) error {
 }
 
 func (r *humioTracesReceiver) handleRequest(resp http.ResponseWriter, req *http.Request) {
-	r.logger.Info("Received request")
-	// err := r.client.SendUnstructuredEvents(context.Background(), []*humioexporter.HumioUnstructuredEvents{
-	// 	{
-	// 		Fields: map[string]string{
-	// 			"source": "load_test",
-	// 		},
-	// 		Messages: []string{
-	// 			"handleRequest received traces from exporter",
-	// 		},
-	// 	},
-	// })
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
 	ctx := obsreport.ReceiverContext(req.Context(), r.cfg.ID().String(), "http")
 
 	decoder := json.NewDecoder(req.Body)
@@ -145,7 +107,6 @@ func (r *humioTracesReceiver) handleRequest(resp http.ResponseWriter, req *http.
 	for _, group := range events {
 		spans += len(group.Events)
 	}
-	r.logger.Info(fmt.Sprintf("Got %d spans", spans))
 
 	td := pdata.NewTraces()
 	rs := td.ResourceSpans().AppendEmpty()
