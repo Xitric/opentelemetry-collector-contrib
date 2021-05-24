@@ -71,8 +71,6 @@ func createTracesExporter(
 	}
 	cfg := config.(*Config)
 
-	params.Logger.Warn(fmt.Sprintf("Start sending to %s", cfg.Endpoint))
-
 	if err := cfg.sanitize(); err != nil {
 		return nil, err
 	}

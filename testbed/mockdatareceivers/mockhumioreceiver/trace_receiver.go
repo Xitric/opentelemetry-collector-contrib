@@ -37,6 +37,7 @@ type humioTracesReceiver struct {
 	logger         *zap.Logger
 	tracesConsumer consumer.Traces
 	server         *http.Server
+	// client         humioexporter.ExporterClient
 }
 
 func NewTracesReceiver(
@@ -48,10 +49,29 @@ func NewTracesReceiver(
 		return nil, errors.New("missing required consumer for traces")
 	}
 
+	// factory := humioexporter.NewFactory()
+	// c := factory.CreateDefaultConfig().(*humioexporter.Config)
+	// c.HTTPClientSettings = confighttp.HTTPClientSettings{
+	// 	Endpoint: "https://cloud.humio.com/",
+	// 	TLSSetting: configtls.TLSClientSetting{
+	// 		InsecureSkipVerify: true,
+	// 	},
+	// }
+	// c.Logs = humioexporter.LogsConfig{
+	// 	IngestToken: "052c2230-f26a-40bf-8b6e-d8375b936af3",
+	// }
+	// c.Sanitize()
+
+	// client, err := humioexporter.NewHumioClient(c, zap.L())
+	// if err != nil {
+	// 	panic("Shit")
+	// }
+
 	return &humioTracesReceiver{
 		cfg:            cfg,
 		logger:         logger,
 		tracesConsumer: nextConsumer,
+		// client:         client,
 	}, nil
 }
 
@@ -90,6 +110,19 @@ func (r *humioTracesReceiver) Shutdown(ctx context.Context) error {
 
 func (r *humioTracesReceiver) handleRequest(resp http.ResponseWriter, req *http.Request) {
 	r.logger.Info("Received request")
+	// err := r.client.SendUnstructuredEvents(context.Background(), []*humioexporter.HumioUnstructuredEvents{
+	// 	{
+	// 		Fields: map[string]string{
+	// 			"source": "load_test",
+	// 		},
+	// 		Messages: []string{
+	// 			"handleRequest received traces from exporter",
+	// 		},
+	// 	},
+	// })
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
 	ctx := obsreport.ReceiverContext(req.Context(), r.cfg.ID().String(), "http")
 
 	decoder := json.NewDecoder(req.Body)

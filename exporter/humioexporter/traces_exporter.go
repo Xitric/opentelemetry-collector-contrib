@@ -19,6 +19,7 @@ import (
 	"errors"
 	"sync"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/consumer/pdata"
 	"go.opentelemetry.io/collector/translator/conventions"
@@ -64,6 +65,10 @@ func newTracesExporter(cfg *Config, logger *zap.Logger, client exporterClient) *
 	}
 }
 
+func (e *humioTracesExporter) ConsumeTraces(ctx context.Context, td pdata.Traces) error {
+	return e.pushTraceData(ctx, td)
+}
+
 func (e *humioTracesExporter) pushTraceData(ctx context.Context, td pdata.Traces) error {
 	e.wg.Add(1)
 	defer e.wg.Done()
@@ -104,11 +109,11 @@ func (e *humioTracesExporter) tracesToHumioEvents(td pdata.Traces) ([]*HumioStru
 		resSpan := resSpans.At(i)
 		r := resSpan.Resource()
 
-		if _, ok := r.Attributes().Get(conventions.AttributeServiceName); !ok {
-			droppedTraces = append(droppedTraces, resSpan)
-			e.logger.Error("skipping export of spans for resource with missing service name, which is required for the Humio exporter")
-			continue
-		}
+		// if _, ok := r.Attributes().Get(conventions.AttributeServiceName); !ok {
+		// 	droppedTraces = append(droppedTraces, resSpan)
+		// 	e.logger.Error("skipping export of spans for resource with missing service name, which is required for the Humio exporter")
+		// 	continue
+		// }
 
 		instSpans := resSpan.InstrumentationLibrarySpans()
 		for j := 0; j < instSpans.Len(); j++ {
@@ -236,6 +241,14 @@ func tagFromSpan(evt *HumioStructuredEvent, strategy Tagger) string {
 	default: // TagNone
 		return ""
 	}
+}
+
+func (e *humioTracesExporter) Start(ctx context.Context, host component.Host) error {
+	return nil
+}
+
+func (e *humioTracesExporter) Shutdown(ctx context.Context) error {
+	return e.shutdown(ctx)
 }
 
 func (e *humioTracesExporter) shutdown(context.Context) error {

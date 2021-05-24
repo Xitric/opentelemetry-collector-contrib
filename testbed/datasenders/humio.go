@@ -33,15 +33,35 @@ type HumioDataSender struct {
 	testbed.DataSenderBase
 	t      consumer.Traces
 	logger *zap.Logger
+	// client humioexporter.ExporterClient
 }
 
 func NewHumioDataSender(port int) *HumioDataSender {
+	// factory := humioexporter.NewFactory()
+	// cfg := factory.CreateDefaultConfig().(*humioexporter.Config)
+	// cfg.HTTPClientSettings = confighttp.HTTPClientSettings{
+	// 	Endpoint: "https://cloud.humio.com/",
+	// 	TLSSetting: configtls.TLSClientSetting{
+	// 		InsecureSkipVerify: true,
+	// 	},
+	// }
+	// cfg.Logs = humioexporter.LogsConfig{
+	// 	IngestToken: "052c2230-f26a-40bf-8b6e-d8375b936af3",
+	// }
+	// cfg.Sanitize()
+
+	// client, err := humioexporter.NewHumioClient(cfg, zap.L())
+	// if err != nil {
+	// 	panic("Shit")
+	// }
+
 	return &HumioDataSender{
 		DataSenderBase: testbed.DataSenderBase{
 			Port: port,
 			Host: testbed.DefaultHost,
 		},
 		logger: zap.L(),
+		// client: client,
 	}
 }
 
@@ -82,6 +102,29 @@ func (hs *HumioDataSender) ProtocolName() string {
 
 func (hs *HumioDataSender) ConsumeTraces(ctx context.Context, td pdata.Traces) error {
 	hs.logger.Warn("Oh yeah, send that stuffz!")
+	// err := hs.client.SendUnstructuredEvents(context.Background(), []*humioexporter.HumioUnstructuredEvents{
+	// 	{
+	// 		Fields: map[string]string{
+	// 			"source": "load_test",
+	// 		},
+	// 		Messages: []string{
+	// 			"ConsumeTraces received traces to send",
+	// 		},
+	// 	},
+	// })
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// hs.client.SendUnstructuredEvents(context.Background(), []*humioexporter.HumioUnstructuredEvents{
+	// 	{
+	// 		Fields: map[string]string{
+	// 			"source": "load_test",
+	// 		},
+	// 		Messages: []string{
+	// 			fmt.Sprintf("Consumer: %s", reflect.TypeOf(hs.t)),
+	// 		},
+	// 	},
+	// })
 	err := hs.t.ConsumeTraces(ctx, td)
 	if err != nil {
 		hs.logger.Error(err.Error())
