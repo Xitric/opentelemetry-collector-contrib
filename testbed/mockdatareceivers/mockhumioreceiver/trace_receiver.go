@@ -97,14 +97,14 @@ func (r *humioTracesReceiver) handleRequest(resp http.ResponseWriter, req *http.
 
 	// Read through the array of structured events one group at a time
 	for decoder.More() {
-		var group humioexporter.HumioStructuredEvents
+		var group []*humioexporter.HumioStructuredEvents
 		err := decoder.Decode(&group)
 		if err != nil {
 			resp.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		events = append(events, &group)
+		events = append(events, group...)
 	}
 
 	// Then record the spans we received

@@ -17,7 +17,6 @@ package humioexporter
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
@@ -90,12 +89,14 @@ func createTracesExporter(
 
 	exporter := newTracesExporter(cfg, params.Logger, client)
 
-	return exporterhelper.NewTracesExporter(
-		cfg,
-		params.Logger,
-		exporter.pushTraceData,
-		exporterhelper.WithQueue(cfg.QueueSettings),
-		exporterhelper.WithRetry(cfg.RetrySettings),
-		exporterhelper.WithShutdown(exporter.shutdown),
-	)
+	return exporter, nil
+	// return exporterhelper.NewTracesExporter(
+	// 	cfg,
+	// 	params.Logger,
+	// 	exporter.pushTraceData,
+	// 	// Does it work without all the queues?
+	// 	// exporterhelper.WithQueue(cfg.QueueSettings),
+	// 	// exporterhelper.WithRetry(cfg.RetrySettings),
+	// 	// exporterhelper.WithShutdown(exporter.shutdown),
+	// )
 }

@@ -4,9 +4,8 @@ go 1.15
 
 require (
 	github.com/fluent/fluent-logger-golang v1.6.0
-	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/carbonexporter v0.0.0-00010101000000-000000000000
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/humioexporter v0.26.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/humioexporter v0.0.0-00010101000000-000000000000
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter v0.0.0-00010101000000-000000000000
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.0.0-00010101000000-000000000000
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk v0.0.0-00010101000000-000000000000
@@ -23,6 +22,8 @@ require (
 )
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/carbonexporter => ../exporter/carbonexporter
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/humioexporter => ../exporter/humioexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter => ../exporter/sapmexporter
 
