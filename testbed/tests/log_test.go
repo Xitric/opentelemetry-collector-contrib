@@ -41,7 +41,7 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   testbed.NewOTLPLogsDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
 			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 35,
+				ExpectedMaxCPU: 100,
 				ExpectedMaxRAM: 82,
 			},
 		},
@@ -50,7 +50,7 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   datasenders.NewFileLogWriter(),
 			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 30,
+				ExpectedMaxCPU: 100,
 				ExpectedMaxRAM: 85,
 			},
 		},
@@ -59,7 +59,7 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   datasenders.NewFileLogWriter(),
 			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 30,
+				ExpectedMaxCPU: 100,
 				ExpectedMaxRAM: 85,
 			},
 			extensions: datasenders.NewLocalFileStorageExtension(),
@@ -132,7 +132,7 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   flw,
 			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 50,
+				ExpectedMaxCPU: 100,
 				ExpectedMaxRAM: 155,
 			},
 			extensions: flw.Extensions(),
@@ -142,7 +142,7 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   datasenders.NewFluentLogsForwarder(t, testbed.GetAvailablePort(t)),
 			receiver: datareceivers.NewSplunkHECDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 60,
+				ExpectedMaxCPU: 100,
 				ExpectedMaxRAM: 150,
 			},
 		},
